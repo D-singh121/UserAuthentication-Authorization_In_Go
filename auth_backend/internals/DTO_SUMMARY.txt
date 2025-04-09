@@ -1,0 +1,23 @@
+// ✅ DTO (Data Transfer Object) Summary:
+//
+// DTOs are used to define the shape of data that travels between client and server.
+// Instead of exposing internal database models (like gorm.Model), we use DTOs
+// to send or receive only required and safe fields.
+//
+// 👉 Why use DTOs?
+// 1. 🛡️ Security: Prevents leaking sensitive fields like password, tokens, etc.
+// 2. 🎯 Validation: Ensures the input structure is strictly controlled and validated.
+// 3. 🔄 Separation: Cleanly separates API layer from database models.
+// 4. 🔧 Flexibility: Allows reshaping data for different client needs without touching DB schema.
+//
+// Typically, we create 3 types of DTOs:
+// - Request DTOs: To receive input data from the client (e.g., RegisterRequest, LoginRequest)
+// - Response DTOs: To send filtered output data to the client (e.g., UserResponse)
+// - Update DTOs (optional): For PATCH/PUT operations when updating a resource.
+//
+// 📌 Example:
+// - `RegisterRequest` accepts user data during registration.
+// - `LoginRequest` handles login credentials.
+// - `UserResponse` is sent to the client without exposing sensitive fields like password.
+//
+// 🚫 Don't bind models directly to JSON inputs/outputs — always use DTOs for better control.
