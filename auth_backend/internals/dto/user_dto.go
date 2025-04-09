@@ -2,10 +2,10 @@ package dto
 
 // 📝 Request struct for user registration
 type RegisterRequest struct {
-	Name     string `json:"name" binding:"required"`     // Required field
-	Email    string `json:"email" binding:"required"`    // Required + email format (can add custom validator)
-	Password string `json:"password" binding:"required"` // Required field
-	Age      int    `json:"age"`                         // Optional
+	Name     string `json:"name" binding:"required"`              // Required field
+	Email    string `json:"email" binding:"required"`             // Required + email format (can add custom validator)
+	Password string `json:"password" binding:"required"`          // Required field
+	Age      int    `json:"age" binding:"required,gte=0,lte=120"` // required
 }
 
 // 🔐 Login request payload

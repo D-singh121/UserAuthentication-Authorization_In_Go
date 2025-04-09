@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"github.com/devesh121/userAuth/internals/models" // Importing User model
@@ -7,12 +7,12 @@ import (
 
 // UserRepo interface declares methods to be implemented :- matlab inhe implement karna hai but kaise vo nahi batata hai.
 type UserRepo interface {
-	Create(user *models.User) (*models.User, error) // Method to create new user
-	GetByEmail(email string) (*models.User, error)  // Method to find user by email
-	GetByID(id uint) (*models.User, error)          // Method to find user by ID
-	GetAll() ([]models.User, error)                 // Method to get all users
-	Update(user *models.User) (*models.User, error) // Method to update user
-	Delete(id uint) error                           // Method to delete user
+	CreateUser(user *models.User) (*models.User, error) // Method to create new user
+	GetUserByEmail(email string) (*models.User, error)  // Method to find user by email
+	GetUserByID(id uint) (*models.User, error)          // Method to find user by ID
+	GetAllUsers() ([]models.User, error)                // Method to get all users
+	UpdateUser(user *models.User) (*models.User, error) // Method to update user
+	DeleteUser(id uint) error                           // Method to delete user
 }
 
 // postgresUserRepository is the concrete implementation of UserRepo using PostgreSQL (via GORM)
@@ -28,16 +28,16 @@ func NewPostgresUserRepo(db *gorm.DB) UserRepo {
 	return &postgresUserRepository{db: db}
 }
 
-// Create adds a new user to the database
-func (r *postgresUserRepository) Create(user *models.User) (*models.User, error) {
+// CreateUser adds a new user to the database
+func (r *postgresUserRepository) CreateUser(user *models.User) (*models.User, error) {
 	if err := r.db.Create(user).Error; err != nil {
 		return nil, err // Return error if insertion fails
 	}
 	return user, nil
 }
 
-// GetByEmail finds a user by email
-func (r *postgresUserRepository) GetByEmail(email string) (*models.User, error) {
+// GetUserByEmail finds a user by email
+func (r *postgresUserRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err // Return error if user not found
@@ -45,8 +45,8 @@ func (r *postgresUserRepository) GetByEmail(email string) (*models.User, error) 
 	return &user, nil
 }
 
-// GetByID finds a user by ID
-func (r *postgresUserRepository) GetByID(id uint) (*models.User, error) {
+// GetUserByID finds a user by ID
+func (r *postgresUserRepository) GetUserByID(id uint) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err // Return error if user not found
@@ -54,8 +54,8 @@ func (r *postgresUserRepository) GetByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
-// GetAll fetches all users from the DB
-func (r *postgresUserRepository) GetAll() ([]models.User, error) {
+// GetAllUsers fetches all users from the DB
+func (r *postgresUserRepository) GetAllUsers() ([]models.User, error) {
 	var users []models.User
 	if err := r.db.Find(&users).Error; err != nil {
 		return nil, err // Return error if DB read fails
@@ -63,16 +63,16 @@ func (r *postgresUserRepository) GetAll() ([]models.User, error) {
 	return users, nil // users ek slice hai isliye uska refrence yaha return me pass hoga isliye use "&users" aisa likhne ki jarurat nahi hai.
 }
 
-// Update modifies an existing user record
-func (r *postgresUserRepository) Update(user *models.User) (*models.User, error) {
+// UpdateUser modifies an existing user record
+func (r *postgresUserRepository) UpdateUser(user *models.User) (*models.User, error) {
 	if err := r.db.Save(user).Error; err != nil {
 		return nil, err // Return error if update fails
 	}
 	return user, nil
 }
 
-// Delete removes a user by ID
-func (r *postgresUserRepository) Delete(id uint) error {
+// DeleteUser removes a user by ID
+func (r *postgresUserRepository) DeleteUser(id uint) error {
 	if err := r.db.Delete(&models.User{}, id).Error; err != nil {
 		return err // Return error if delete fails
 	}
