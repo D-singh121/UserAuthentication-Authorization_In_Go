@@ -15,6 +15,16 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"` // Required
 }
 
+// login response struct dto
+type LoginResponse struct {
+	ID    uint   `json:"id"`
+	Token string `json:"token"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Age   int    `json:"age"`
+	Role  string `json:"role"`
+}
+
 // 📤 Response struct to return filtered user info (excluding sensitive data like password)
 type UserResponse struct {
 	ID    uint   `json:"id"`

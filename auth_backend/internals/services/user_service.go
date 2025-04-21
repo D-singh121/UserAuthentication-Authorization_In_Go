@@ -6,14 +6,16 @@ import (
 	"github.com/devesh121/userAuth/internals/dto"          // Request and response DTOs
 	"github.com/devesh121/userAuth/internals/models"       // DB models
 	"github.com/devesh121/userAuth/internals/repositories" // Repository abstraction
-	"golang.org/x/crypto/bcrypt"                           // Password hashing
+	"github.com/devesh121/userAuth/internals/utils"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt" // Password hashing
 	"gorm.io/gorm"
 )
 
 // UserService interface defines business logic layer functions
 type UserService interface {
 	RegisterUserService(userReq dto.RegisterRequest) (*dto.UserResponse, error)
-	// LoginUserService(userReq dto.LoginRequest) (dto.UserResponse, error)
+	LoginUserService(c *gin.Context, userReq dto.LoginRequest) (*dto.LoginResponse, error)
 	GetAllUsersService() ([]dto.UserResponse, error)
 	GetUserByIDService(id uint) (*dto.UserResponse, error)
 	GetUserByEmailService(email string) (*dto.UserResponse, error)
@@ -79,6 +81,40 @@ func (s *userServiceImpl) RegisterUserService(userReq dto.RegisterRequest) (*dto
 	}
 
 	return response, nil
+}
+
+// LoginUserService handles the business logic of user login
+func (s *userServiceImpl) LoginUserService(c *gin.Context, userReq dto.LoginRequest) (*dto.LoginResponse, error) {
+	//  Find user by email
+	user, err := s.userRepo.GetUserByEmail(userReq.Email)
+	if err != nil {
+		return nil, errors.New("no such user found")
+	}
+
+	// Compare password
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userReq.Password))
+	if err != nil {
+		return nil, errors.New("invalid credentials password or email")
+	}
+
+	//  Generate JWT
+	token, err := utils.GenerateJWT(user.ID, user.Email, user.Role)
+	if err != nil {
+		return nil, errors.New("failed to generate token")
+	}
+
+	//  set token on cookie
+	c.SetCookie("auth_token", token, 3600*24, "/", "", true, true)
+
+	// Return token + user details
+	return &dto.LoginResponse{
+		ID:    user.ID,
+		Token: token,
+		Name:  user.Name,
+		Email: user.Email,
+		Age:   user.Age,
+		Role:  user.Role,
+	}, nil
 }
 
 // GetAllUsersService retrieves all users and returns them as DTOs

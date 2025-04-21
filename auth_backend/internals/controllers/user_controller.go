@@ -45,6 +45,30 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 	})
 }
 
+// LoginUser handles incoming login requests from client
+func (uc *UserController) LoginUser(c *gin.Context) {
+	var req dto.LoginRequest
+
+	// Bind JSON
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request fields"})
+		return
+	}
+
+	// Call service
+	resp, err := uc.userService.LoginUserService(c, req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return token
+	c.JSON(http.StatusOK, gin.H{
+		"message": "login successful",
+		"data":    resp,
+	})
+}
+
 // GetAllUser handles incoming getallusers request from client
 func (uc *UserController) GetAllUsers(c *gin.Context) {
 	users, err := uc.userService.GetAllUsersService()
