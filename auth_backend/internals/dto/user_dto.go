@@ -6,6 +6,7 @@ type RegisterRequest struct {
 	Email    string `json:"email" binding:"required"`             // Required + email format (can add custom validator)
 	Password string `json:"password" binding:"required"`          // Required field
 	Age      int    `json:"age" binding:"required,gte=5,lte=120"` // required
+	Role     string `json:"role"`                                 // Required field
 }
 
 // 🔐 Login request payload
@@ -20,6 +21,7 @@ type UserResponse struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Age   int    `json:"age"`
+	Role  string `json:"role"`
 }
 
 // UpdateRequest defines the expected payload for updating a user

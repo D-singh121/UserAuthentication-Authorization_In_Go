@@ -8,4 +8,5 @@ type User struct {
 	Email      string `json:"email" gorm:"unique" binding:"required,email"` // required + must be a valid email
 	Password   string `json:"password" binding:"required,min=6"`            // required + minimum 6 chars
 	Age        int    `json:"age" binding:"required,gte=0,lte=120"`         // required + between 0 and 100
+	Role       string `json:"role" gorm:"default:user"`                     // required
 }

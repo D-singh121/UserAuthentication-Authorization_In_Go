@@ -48,12 +48,19 @@ func (s *userServiceImpl) RegisterUserService(userReq dto.RegisterRequest) (*dto
 		return nil, errors.New("failed to hash password")
 	}
 
+	// Default role to "user" if not provided
+	role := userReq.Role
+	if role == "" {
+		role = "user"
+	}
+
 	// Step 3: Map the request DTO to DB model
 	newUser := &models.User{
 		Name:     userReq.Name,
 		Email:    userReq.Email,
 		Password: string(hashedPassword),
 		Age:      userReq.Age,
+		Role:     role,
 	}
 
 	// Step 4: Call repo to create the user in DB
@@ -68,6 +75,7 @@ func (s *userServiceImpl) RegisterUserService(userReq dto.RegisterRequest) (*dto
 		Name:  createdUser.Name,
 		Email: createdUser.Email,
 		Age:   createdUser.Age,
+		Role:  createdUser.Role,
 	}
 
 	return response, nil
