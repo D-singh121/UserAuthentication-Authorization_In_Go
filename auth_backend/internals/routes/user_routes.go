@@ -23,12 +23,12 @@ func UserRoutes(router *gin.Engine) {
 	userController := controllers.NewUserController(userService)
 
 	{
-		users.POST("/register", userController.RegisterUser) // Register new user
-		// users.POST("/login", controllers.LoginUser)            // Login
-		// users.GET("/", controllers.GetAllUsers)                // Get all users
-		// users.GET("/:id", controllers.GetUserByID)             // Get user by ID
-		// users.GET("/email/:email", controllers.GetUserByEmail) // Get user by Email
-		// users.PUT("/:id", controllers.UpdateUserByID)          // Update user
-		// users.DELETE("/:id", controllers.DeleteUserByID)       // Delete user
+		users.POST("/register", userController.RegisterUser)
+		// users.POST("/login", userController.LoginUser)
+		users.GET("/", userController.GetAllUsers)
+		users.GET("/:id", userController.GetUserByID)
+		users.POST("/email", userController.GetUserByEmail)
+		users.PUT("/:id", userController.UpdateUserByID)
+		users.DELETE("/:id", userController.DeleteUserByID)
 	}
 }

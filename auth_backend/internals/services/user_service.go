@@ -13,6 +13,12 @@ import (
 // UserService interface defines business logic layer functions
 type UserService interface {
 	RegisterUserService(userReq dto.RegisterRequest) (*dto.UserResponse, error)
+	// LoginUserService(userReq dto.LoginRequest) (dto.UserResponse, error)
+	GetAllUsersService() ([]dto.UserResponse, error)
+	GetUserByIDService(id uint) (*dto.UserResponse, error)
+	GetUserByEmailService(email string) (*dto.UserResponse, error)
+	UpdateUserService(userReq dto.UpdateRequest, id uint) (*dto.UserResponse, error)
+	DeleteUserService(id uint) error
 }
 
 // userServiceImpl struct implements the UserService interface
@@ -65,4 +71,122 @@ func (s *userServiceImpl) RegisterUserService(userReq dto.RegisterRequest) (*dto
 	}
 
 	return response, nil
+}
+
+// GetAllUsersService retrieves all users and returns them as DTOs
+func (s *userServiceImpl) GetAllUsersService() ([]dto.UserResponse, error) {
+	// Step 1: Call the repository to get all users
+	users, err := s.userRepo.GetAllUsers()
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Map DB models to DTOs
+	var userResponses []dto.UserResponse
+	for _, user := range users {
+		userResponses = append(userResponses, dto.UserResponse{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+			Age:   user.Age,
+		})
+	}
+
+	return userResponses, nil
+}
+
+// GetUserByIDService retrieves a user by ID
+func (s *userServiceImpl) GetUserByIDService(id uint) (*dto.UserResponse, error) {
+	// Step 1: Call the repository to get the user by ID
+	user, err := s.userRepo.GetUserByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Return the user data as a DTO
+	return &dto.UserResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Age:   user.Age,
+	}, nil
+}
+
+// GetUserByEmailService retrieves a user by email
+func (s *userServiceImpl) GetUserByEmailService(email string) (*dto.UserResponse, error) {
+	// Step 1: Call the repository to get the user by email
+	user, err := s.userRepo.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Return the user data as a DTO
+	return &dto.UserResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Age:   user.Age,
+	}, nil
+}
+
+// UpdateUserService updates an existing user's details
+func (s *userServiceImpl) UpdateUserService(userReq dto.UpdateRequest, id uint) (*dto.UserResponse, error) {
+	// Step 1: Fetch the existing user from the repository
+	user, err := s.userRepo.GetUserByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 2: Update user fields (only update non-empty fields)
+	if userReq.Name != "" {
+		user.Name = userReq.Name
+	}
+	if userReq.Email != "" {
+		user.Email = userReq.Email
+	}
+	if userReq.Password != "" {
+		// Hash the new password before saving
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, errors.New("failed to hash password")
+		}
+		user.Password = string(hashedPassword)
+	}
+	if userReq.Age != 0 {
+		user.Age = userReq.Age
+	}
+
+	// Step 3: Call the repository to save the updated user
+	updatedUser, err := s.userRepo.UpdateUser(user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 4: Return the updated user as a DTO
+	return &dto.UserResponse{
+		ID:    updatedUser.ID,
+		Name:  updatedUser.Name,
+		Email: updatedUser.Email,
+		Age:   updatedUser.Age,
+	}, nil
+}
+
+// DeleteUserService deletes a user by ID
+func (s *userServiceImpl) DeleteUserService(id uint) error {
+	// Check if user exists
+	_, err := s.userRepo.GetUserByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("user not found")
+		}
+		return err
+	}
+
+	// Proceed to delete
+	err = s.userRepo.DeleteUser(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

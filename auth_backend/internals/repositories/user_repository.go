@@ -31,7 +31,7 @@ func NewPostgresUserRepo(db *gorm.DB) UserRepo {
 // CreateUser adds a new user to the database
 func (r *postgresUserRepository) CreateUser(user *models.User) (*models.User, error) {
 	if err := r.db.Create(user).Error; err != nil {
-		return nil, err // Return error if insertion fails
+		return nil, err
 	}
 	return user, nil
 }
@@ -40,7 +40,7 @@ func (r *postgresUserRepository) CreateUser(user *models.User) (*models.User, er
 func (r *postgresUserRepository) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
-		return nil, err // Return error if user not found
+		return nil, err
 	}
 	return &user, nil
 }
@@ -49,7 +49,7 @@ func (r *postgresUserRepository) GetUserByEmail(email string) (*models.User, err
 func (r *postgresUserRepository) GetUserByID(id uint) (*models.User, error) {
 	var user models.User
 	if err := r.db.First(&user, id).Error; err != nil {
-		return nil, err // Return error if user not found
+		return nil, err
 	}
 	return &user, nil
 }
@@ -58,7 +58,7 @@ func (r *postgresUserRepository) GetUserByID(id uint) (*models.User, error) {
 func (r *postgresUserRepository) GetAllUsers() ([]models.User, error) {
 	var users []models.User
 	if err := r.db.Find(&users).Error; err != nil {
-		return nil, err // Return error if DB read fails
+		return nil, err
 	}
 	return users, nil // users ek slice hai isliye uska refrence yaha return me pass hoga isliye use "&users" aisa likhne ki jarurat nahi hai.
 }
@@ -79,6 +79,6 @@ func (r *postgresUserRepository) DeleteUser(id uint) error {
 	return nil
 }
 
-// NOTE:
+// NOTE for me:
 // If struct is passed as pointer → return as it is
 // If struct is local inside function → return its address (&user)
