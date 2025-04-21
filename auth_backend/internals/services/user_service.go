@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/devesh121/userAuth/internals/dto"          // Request and response DTOs
 	"github.com/devesh121/userAuth/internals/models"       // DB models
@@ -16,6 +17,7 @@ import (
 type UserService interface {
 	RegisterUserService(userReq dto.RegisterRequest) (*dto.UserResponse, error)
 	LoginUserService(c *gin.Context, userReq dto.LoginRequest) (*dto.LoginResponse, error)
+	LogoutUserService(c *gin.Context) error
 	GetAllUsersService() ([]dto.UserResponse, error)
 	GetUserByIDService(id uint) (*dto.UserResponse, error)
 	GetUserByEmailService(email string) (*dto.UserResponse, error)
@@ -104,7 +106,7 @@ func (s *userServiceImpl) LoginUserService(c *gin.Context, userReq dto.LoginRequ
 	}
 
 	//  set token on cookie
-	c.SetCookie("auth_token", token, 3600*24, "/", "", true, true)
+	c.SetCookie("auth_token", token, 3600*24, "/", "localhost", true, true)
 
 	// Return token + user details
 	return &dto.LoginResponse{
@@ -115,6 +117,21 @@ func (s *userServiceImpl) LoginUserService(c *gin.Context, userReq dto.LoginRequ
 		Age:   user.Age,
 		Role:  user.Role,
 	}, nil
+}
+
+// LogoutUserService handles the business logic of user logout
+func (s *userServiceImpl) LogoutUserService(c *gin.Context) error {
+	// Try to get the cookie value (auth_token)
+	_, err := c.Cookie("auth_token")
+	if err == nil {
+		fmt.Println("Warning: Cookie still exists after attempted removal")
+	} else {
+		fmt.Println("Cookie successfully removed")
+	}
+
+	// Expire the cookie by setting maxAge to -1 and an empty value
+	c.SetCookie("auth_token", "", -1, "/", "localhost", true, true)
+	return nil
 }
 
 // GetAllUsersService retrieves all users and returns them as DTOs

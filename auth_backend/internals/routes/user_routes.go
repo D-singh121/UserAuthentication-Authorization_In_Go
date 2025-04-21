@@ -25,6 +25,7 @@ func UserRoutes(router *gin.Engine) {
 	{
 		users.POST("/register", userController.RegisterUser)
 		users.POST("/login", userController.LoginUser)
+		users.POST("/logout", userController.LogoutUser)
 		users.GET("/", userController.GetAllUsers)
 		users.GET("/:id", userController.GetUserByID)
 		users.POST("/email", userController.GetUserByEmail)

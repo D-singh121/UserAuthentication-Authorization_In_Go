@@ -69,6 +69,17 @@ func (uc *UserController) LoginUser(c *gin.Context) {
 	})
 }
 
+// LogoutUser handles incoming logout requests from client
+func (uc *UserController) LogoutUser(c *gin.Context) {
+	err := uc.userService.LogoutUserService(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "logout successful"})
+}
+
 // GetAllUser handles incoming getallusers request from client
 func (uc *UserController) GetAllUsers(c *gin.Context) {
 	users, err := uc.userService.GetAllUsersService()
