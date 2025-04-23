@@ -21,6 +21,9 @@ type postgresUserRepository struct {
 	db *gorm.DB // DB instance injected from config
 }
 
+// hum yaha multile repositories bana sakte hai like "mongoUserRepository" etc.
+// Iska matlab ye hai ki agar hum future me koi aur DB use karna chahte hai to sirf ye struct ko modify karna hoga.
+
 // NewPostgresUserRepo returns a new instance of postgresUserRepository as UserRepo in object form.
 // ye ek constructor factory method hai jo ek interface type ka object de deta hai, aur Clean Architecture + Testability maintain karta hai.
 // Is function ko hum "repository" ke upper layer 'service' me use karenge

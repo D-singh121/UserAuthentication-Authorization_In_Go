@@ -16,7 +16,7 @@ import (
 // UserService interface defines business logic layer functions
 type UserService interface {
 	RegisterUserService(userReq dto.RegisterRequest) (*dto.UserResponse, error)
-	LoginUserService(c *gin.Context, userReq dto.LoginRequest) (*dto.LoginResponse, error)
+	LoginUserService(userReq dto.LoginRequest) (*dto.LoginResponse, string, error)
 	LogoutUserService(c *gin.Context) error
 	GetAllUsersService() ([]dto.UserResponse, error)
 	GetUserByIDService(id uint) (*dto.UserResponse, error)
@@ -86,37 +86,33 @@ func (s *userServiceImpl) RegisterUserService(userReq dto.RegisterRequest) (*dto
 }
 
 // LoginUserService handles the business logic of user login
-func (s *userServiceImpl) LoginUserService(c *gin.Context, userReq dto.LoginRequest) (*dto.LoginResponse, error) {
+func (s *userServiceImpl) LoginUserService(userReq dto.LoginRequest) (*dto.LoginResponse, string, error) {
 	//  Find user by email
 	user, err := s.userRepo.GetUserByEmail(userReq.Email)
 	if err != nil {
-		return nil, errors.New("no such user found")
+		return nil, "", errors.New("no such user found")
 	}
 
 	// Compare password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(userReq.Password))
 	if err != nil {
-		return nil, errors.New("invalid credentials password or email")
+		return nil, "", errors.New("invalid credentials password or email")
 	}
 
 	//  Generate JWT
 	token, err := utils.GenerateJWT(user.ID, user.Email, user.Role)
 	if err != nil {
-		return nil, errors.New("failed to generate token")
+		return nil, "", errors.New("failed to generate token")
 	}
-
-	//  set token on cookie
-	c.SetCookie("auth_token", token, 3600*24, "/", "localhost", true, true)
 
 	// Return token + user details
 	return &dto.LoginResponse{
 		ID:    user.ID,
-		Token: token,
 		Name:  user.Name,
 		Email: user.Email,
 		Age:   user.Age,
 		Role:  user.Role,
-	}, nil
+	}, token, nil
 }
 
 // LogoutUserService handles the business logic of user logout
@@ -150,6 +146,7 @@ func (s *userServiceImpl) GetAllUsersService() ([]dto.UserResponse, error) {
 			Name:  user.Name,
 			Email: user.Email,
 			Age:   user.Age,
+			Role:  user.Role,
 		})
 	}
 
@@ -170,23 +167,25 @@ func (s *userServiceImpl) GetUserByIDService(id uint) (*dto.UserResponse, error)
 		Name:  user.Name,
 		Email: user.Email,
 		Age:   user.Age,
+		Role:  user.Role,
 	}, nil
 }
 
 // GetUserByEmailService retrieves a user by email
 func (s *userServiceImpl) GetUserByEmailService(email string) (*dto.UserResponse, error) {
-	// Step 1: Call the repository to get the user by email
+	// Call the repository to get the user by email
 	user, err := s.userRepo.GetUserByEmail(email)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 2: Return the user data as a DTO
+	// Return the user data as a DTO
 	return &dto.UserResponse{
 		ID:    user.ID,
 		Name:  user.Name,
 		Email: user.Email,
 		Age:   user.Age,
+		Role:  user.Role,
 	}, nil
 }
 

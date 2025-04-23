@@ -56,11 +56,14 @@ func (uc *UserController) LoginUser(c *gin.Context) {
 	}
 
 	// Call service
-	resp, err := uc.userService.LoginUserService(c, req)
+	resp, token, err := uc.userService.LoginUserService(req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
+
+	//  set token on cookie
+	c.SetCookie("auth_token", token, 3600*24, "/", "localhost", false, true)
 
 	// Return token
 	c.JSON(http.StatusOK, gin.H{

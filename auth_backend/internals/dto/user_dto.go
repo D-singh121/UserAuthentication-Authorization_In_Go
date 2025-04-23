@@ -18,7 +18,7 @@ type LoginRequest struct {
 // login response struct dto
 type LoginResponse struct {
 	ID    uint   `json:"id"`
-	Token string `json:"token"`
+	Token string `json:"token,omitempty"` // JWT token optional
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Age   int    `json:"age"`

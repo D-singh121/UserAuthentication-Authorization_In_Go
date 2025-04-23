@@ -44,12 +44,6 @@ func ConnectDB() {
 		SkipDefaultTransaction:                   true, // Recommended for performance in some cases
 		PrepareStmt:                              true, // Improves performance for repeated queries
 		DisableForeignKeyConstraintWhenMigrating: true, // Consider your needs for FK constraints in production
-		// Uncomment and adjust these for production connection pooling
-		// ConnPool: &sql.Pool{
-		// 	MaxIdleConns: 10,
-		// 	MaxOpenConns: 100,
-		// 	ConnMaxLifetime: time.Hour,
-		// },
 	})
 	if err != nil {
 		log.Fatal("Failed to connect to the database: ", err) // Exit if connection fails
