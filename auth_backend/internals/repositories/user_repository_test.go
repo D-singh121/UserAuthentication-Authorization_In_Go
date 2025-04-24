@@ -6,6 +6,7 @@ import (
 	"github.com/devesh121/userAuth/internals/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"gorm.io/gorm"
 )
 
 // Define the mockUserRepo struct
@@ -121,6 +122,7 @@ func TestGetUserByID(t *testing.T) {
 	// Create a dummy user object to simulate the database record.
 	id := uint(1)
 	user := &models.User{
+		Model:    gorm.Model{ID: id},
 		Name:     "John Doe",
 		Email:    "johndoe@example.com",
 		Password: "password123",
