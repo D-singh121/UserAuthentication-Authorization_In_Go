@@ -241,7 +241,6 @@ func (s *userServiceImpl) DeleteUserService(id uint) error {
 		}
 		return err
 	}
-
 	// Proceed to delete
 	err = s.userRepo.DeleteUser(id)
 	if err != nil {
