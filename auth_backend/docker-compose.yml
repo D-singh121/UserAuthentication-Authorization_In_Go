@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  userauth:
+    build: .
+    ports:
+      - "8080:8080" # Expose port 8080 of the container to port 8080 of the host
+    env_file:
+      - .env # Automatically load environment variables from the .env file
+    restart: unless-stopped # Automatically restart the container unless it is explicitly stopped
+    networks:
+      - userauth_network # Define a network to attach to
+    depends_on:
+      - postgres # Make sure the PostgreSQL container is up and running before this container starts
+
+  postgres:
+    image: postgres:16 # Use official PostgreSQL image
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432" # Expose PostgreSQL port
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist PostgreSQL data in Docker volumes
+    restart: unless-stopped
+    networks:
+      - userauth_network
+
+networks:
+  userauth_network: # Define the custom network
+    driver: bridge
+
+volumes:
+  postgres_data: # Define a volume to store PostgreSQL data
+    name: postgres_data
