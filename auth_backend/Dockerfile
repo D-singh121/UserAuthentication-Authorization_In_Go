@@ -1,28 +1,44 @@
 FROM golang:1.24.2-alpine AS builder
 
+LABEL maintainer="Devesh Choudhary" \
+    version="1.0.0" \
+    description="User Authentication Service"
+
+RUN apk update && \
+    apk add --no-cache gcc musl-dev && \
+    rm -rf /var/cache/apk/*
+
 WORKDIR /app
 
 COPY go.mod go.sum ./
 
-RUN go mod tidy
+RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -o userAuth ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-w -s -X main.version=1.0.0" \
+    -trimpath \
+    -o userAuth ./cmd/main.go
 
-# Now, create a new lightweight image for running the application
 FROM alpine:latest
 
-WORKDIR /root/
+LABEL maintainer="Devesh Choudhary" \
+    version="1.0.0" \
+    description="User Authentication Service"
 
-# Copy the built binary from the builder stage
+RUN apk update && \
+    apk add --no-cache ca-certificates tzdata curl wget && \
+    update-ca-certificates && \
+    rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
 COPY --from=builder /app/userAuth .
 
-# Set environment variables
-ENV PORT=8080
+ENV GIN_MODE=release \
+    TZ=UTC
 
-# Expose the port that the app will run on
 EXPOSE 8080
 
-# Run the application when the container starts
-CMD ["./userAuth"]
+ENTRYPOINT ["./userAuth"]

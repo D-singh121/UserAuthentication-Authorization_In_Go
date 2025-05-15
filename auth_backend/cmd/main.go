@@ -14,6 +14,9 @@ func main() {
 
 	r := gin.Default()
 
+	// Register user routes
+	routes.UserRoutes(r)
+
 	// Root route test
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -24,11 +27,8 @@ func main() {
 	// Health Check Endpoint
 	r.GET("/health", healthCheck)
 
-	// Register user routes
-	routes.UserRoutes(r)
-
 	println("✅ Server started at http://localhost:8080")
-	r.Run(":8080")
+	r.Run("0.0.0.0:8080")
 }
 
 func healthCheck(c *gin.Context) {
