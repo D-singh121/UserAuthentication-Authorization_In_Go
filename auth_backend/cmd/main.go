@@ -4,27 +4,23 @@ import (
 	"net/http"
 
 	"github.com/devesh121/userAuth/internals/routes"
+	"github.com/devesh121/userAuth/monitoring/metrics"
 	"github.com/devesh121/userAuth/pkg/config"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	config.LoadEnv()   // Load environment variables at first
-	config.ConnectDB() // Connect to the database
+	config.LoadEnv()
+	config.ConnectDB()
 
 	r := gin.Default()
-
-	// Register user routes
 	routes.UserRoutes(r)
 
-	// Root route test
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello World",
-		})
-	})
+	metrics.Initialize()
+	r.Use(metrics.MetricsMiddleware())
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Health Check Endpoint
 	r.GET("/health", healthCheck)
 
 	println("✅ Server started at http://localhost:8080")
@@ -32,13 +28,20 @@ func main() {
 }
 
 func healthCheck(c *gin.Context) {
+	status := "up"
+	message := "Application and database are healthy"
+	isHealthy := true
+
 	db := config.DB
 	if db != nil {
 		sqlDB, err := db.DB()
 		if err != nil {
+			status = "error"
+			message = "Failed to access database connection"
+			isHealthy = false
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":  "error",
-				"message": "Failed to access database connection",
+				"status":  status,
+				"message": message,
 				"error":   err.Error(),
 			})
 			return
@@ -46,23 +49,33 @@ func healthCheck(c *gin.Context) {
 
 		err = sqlDB.Ping()
 		if err != nil {
+			status = "down"
+			message = "Database connection failed"
+			isHealthy = false
 			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status":  "down",
-				"message": "Database connection failed",
+				"status":  status,
+				"message": message,
 				"error":   err.Error(),
 			})
 			return
 		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "up",
-			"message": "Application and database are healthy",
+	} else {
+		status = "error"
+		message = "Database instance not initialized"
+		isHealthy = false
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  status,
+			"message": message,
 		})
 		return
 	}
 
-	c.JSON(http.StatusInternalServerError, gin.H{
-		"status":  "error",
-		"message": "Database instance not initialized",
-	})
+	// Only record metrics if everything is healthy
+	if isHealthy {
+		metrics.ActiveUsers.Set(1) // Example metric
+		c.JSON(http.StatusOK, gin.H{
+			"status":  status,
+			"message": message,
+		})
+	}
 }

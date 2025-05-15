@@ -1,0 +1,54 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build output
+bin/
+build/
+
+# Go specific
+*.prof
+*.trace
+*.test
+coverage.out
+coverage.html
+
+# Vendor directory (if using Go modules, you can ignore this)
+vendor/
+
+# Logs
+*.log
+logs/
+
+# Git
+.git
+.gitignore
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env files (keep secrets out of the image)
+.env
+.env.*
+
+# Test files
+*_test.go
+testdata/
+mocks/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation
+*.md
+docs/
