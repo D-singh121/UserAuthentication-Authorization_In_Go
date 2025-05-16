@@ -10,14 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UserRoutes sets up all routes under /api/users
-func UserRoutes(router *gin.Engine) {
-	v1 := router.Group("/api/v1") // api versioning
-	users := v1.Group("/users")   // /api/v1/users
+func UserRoutes(v1 *gin.RouterGroup) {
+	users := v1.Group("/users")
 
-	db := config.DB // global DB variable in our config package
+	db := config.DB
 
-	// Initialize repositories, services, and controllers by injecting dependencies into each layer
 	userRepo := repositories.NewPostgresUserRepo(db)
 	userService := services.NewUserService(userRepo)
 	userController := controllers.NewUserController(userService)

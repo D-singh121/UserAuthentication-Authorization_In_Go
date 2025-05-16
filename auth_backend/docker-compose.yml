@@ -22,8 +22,8 @@ services:
       - auth-network
 
   postgres:
-    image: postgres:16
     container_name: auth-db
+    image: postgres:16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -44,8 +44,8 @@ services:
       - auth-network
 
   prometheus:
-    image: prom/prometheus:v3.3.1
     container_name: prometheus
+    image: prom/prometheus:v3.3.1
     restart: unless-stopped
     volumes:
       - ./monitoring/prometheus:/etc/prometheus
@@ -53,6 +53,8 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--storage.tsdb.retention.size=512MB"
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
       - "--web.enable-lifecycle"
@@ -61,6 +63,7 @@ services:
     depends_on:
       app:
         condition: service_healthy
+    mem_limit: 1G
     networks:
       - auth-network
     healthcheck:
@@ -76,15 +79,16 @@ services:
     restart: unless-stopped
     volumes:
       - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/api_metrics.json
     ports:
       - "3000:3000"
     depends_on:
-      - app
       - prometheus
     networks:
       - auth-network
@@ -93,7 +97,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.10.1
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@auth-db:5432/${DB_NAME}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    networks:
+      - auth-network
+    restart: unless-stopped
+    
 volumes:
   postgres_data:
     name: auth-postgres-data

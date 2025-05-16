@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// HTTPRequestsTotal tracks total number of HTTP requests
 	HTTPRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_requests_total",
@@ -16,15 +17,17 @@ var (
 		[]string{"method", "path", "status"},
 	)
 
+	// HTTPRequestDuration tracks request duration
 	HTTPRequestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "http_request_duration_seconds",
-			Help:    "Duration of HTTP requests in seconds",
-			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
+			Help:    "Duration of HTTP requests.",
+			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"method", "path"},
+		[]string{"method", "path", "status"},
 	)
 
+	// DatabaseOperationsTotal tracks database operations
 	DatabaseOperationsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "database_operations_total",
@@ -33,6 +36,7 @@ var (
 		[]string{"operation", "status"},
 	)
 
+	// ActiveUsers tracks current active users
 	ActiveUsers = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "active_users",
@@ -40,6 +44,7 @@ var (
 		},
 	)
 
+	// RequestsFailed tracks failed requests
 	RequestsFailed = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_requests_failed_total",
@@ -48,6 +53,7 @@ var (
 		[]string{"method", "path", "error_type"},
 	)
 
+	// RequestsInFlight tracks concurrent requests
 	RequestsInFlight = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "http_requests_in_flight",
@@ -55,15 +61,17 @@ var (
 		},
 	)
 
+	// ResponseSize tracks response sizes
 	ResponseSize = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "http_response_size_bytes",
 			Help:    "Size of HTTP responses in bytes",
-			Buckets: []float64{100, 1000, 10000, 100000, 1000000}, // 100B, 1KB, 10KB, 100KB, 1MB
+			Buckets: []float64{100, 1000, 10000, 100000, 1000000},
 		},
 		[]string{"method", "path"},
 	)
 
+	// MemoryUsage tracks memory usage
 	MemoryUsage = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "process_memory_bytes",
@@ -73,18 +81,19 @@ var (
 	)
 )
 
+// Initialize registers all metrics with Prometheus
 func Initialize() {
-	prometheus.MustRegister(
-		HTTPRequestsTotal,
-		HTTPRequestDuration,
-		DatabaseOperationsTotal,
-		ActiveUsers,
-		RequestsFailed,
-		RequestsInFlight,
-		ResponseSize,
-		MemoryUsage,
-	)
+	// Register all metrics
+	prometheus.MustRegister(HTTPRequestsTotal)
+	prometheus.MustRegister(HTTPRequestDuration)
+	prometheus.MustRegister(DatabaseOperationsTotal)
+	prometheus.MustRegister(ActiveUsers)
+	prometheus.MustRegister(RequestsFailed)
+	prometheus.MustRegister(RequestsInFlight)
+	prometheus.MustRegister(ResponseSize)
+	prometheus.MustRegister(MemoryUsage)
 
+	// Start runtime metrics collection
 	go collectRuntimeMetrics()
 }
 
@@ -94,12 +103,10 @@ func collectRuntimeMetrics() {
 	for {
 		runtime.ReadMemStats(&memStats)
 
-		// Update memory metrics
 		MemoryUsage.WithLabelValues("heap").Set(float64(memStats.HeapAlloc))
 		MemoryUsage.WithLabelValues("stack").Set(float64(memStats.StackInuse))
 		MemoryUsage.WithLabelValues("system").Set(float64(memStats.Sys))
 
-		// Sleep for a short duration before next collection
 		time.Sleep(15 * time.Second)
 	}
 }

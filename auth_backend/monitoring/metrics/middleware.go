@@ -1,79 +1,59 @@
 package metrics
 
 import (
+	"fmt"
+	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// responseWriter wraps gin.ResponseWriter to capture the response size
-type responseWriter struct {
-	gin.ResponseWriter
-	responseSize int
+var pathSanitizer = []*regexp.Regexp{
+	regexp.MustCompile(`/\d+`),            // replace numeric IDs
+	regexp.MustCompile(`/[a-f0-9-]{24,}`), // replace MongoDB-like IDs
 }
 
-func (w *responseWriter) Write(b []byte) (int, error) {
-	size, err := w.ResponseWriter.Write(b)
-	w.responseSize += size
-	return size, err
+func sanitizePath(path string) string {
+	for _, re := range pathSanitizer {
+		path = re.ReplaceAllString(path, "/:id")
+	}
+	return path
 }
 
-// MetricsMiddleware records metrics for each HTTP request
 func MetricsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
+		method := c.Request.Method
 
-		// Track in-flight requests
 		RequestsInFlight.Inc()
-		defer RequestsInFlight.Dec()
-
-		// Wrap ResponseWriter to capture response size
-		writer := &responseWriter{ResponseWriter: c.Writer}
-		c.Writer = writer
-
-		// Process request
 		c.Next()
+		RequestsInFlight.Dec()
 
-		// Record metrics after request is processed
 		duration := time.Since(start).Seconds()
-		status := c.Writer.Status()
+		status := strconv.Itoa(c.Writer.Status())
+
 		path := c.FullPath()
 		if path == "" {
 			path = c.Request.URL.Path
 		}
-		method := c.Request.Method
+		path = sanitizePath(path)
 
-		// Record request duration
-		HTTPRequestDuration.WithLabelValues(
-			method,
-			path,
-		).Observe(duration)
+		fmt.Printf("✅ METRICS | %s %s [%s] duration=%.3fs\n", method, path, status, duration)
 
-		// Record total requests
-		HTTPRequestsTotal.WithLabelValues(
-			method,
-			path,
-			strconv.Itoa(status),
-		).Inc()
+		HTTPRequestsTotal.WithLabelValues(method, path, status).Inc()
+		HTTPRequestDuration.WithLabelValues(method, path, status).Observe(duration)
 
-		// Record failed requests (status >= 400)
-		if status >= 400 {
-			errorType := "client_error"
-			if status >= 500 {
-				errorType = "server_error"
-			}
-			RequestsFailed.WithLabelValues(
-				method,
-				path,
-				errorType,
-			).Inc()
+		if length := c.Writer.Size(); length >= 0 {
+			ResponseSize.WithLabelValues(method, path).Observe(float64(length))
 		}
 
-		// Record response size
-		ResponseSize.WithLabelValues(
-			method,
-			path,
-		).Observe(float64(writer.responseSize))
+		if c.Writer.Status() >= 400 {
+			errorType := "client_error"
+			if c.Writer.Status() >= 500 {
+				errorType = "server_error"
+			}
+			RequestsFailed.WithLabelValues(method, path, errorType).Inc()
+		}
 	}
 }

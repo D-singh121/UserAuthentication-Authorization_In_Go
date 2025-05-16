@@ -7,21 +7,39 @@ import (
 	"github.com/devesh121/userAuth/monitoring/metrics"
 	"github.com/devesh121/userAuth/pkg/config"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
+	// Load configuration
 	config.LoadEnv()
 	config.ConnectDB()
 
-	r := gin.Default()
-	routes.UserRoutes(r)
-
+	// Initialize metrics
 	metrics.Initialize()
-	r.Use(metrics.MetricsMiddleware())
-	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
+	// Create router without default middleware
+	r := gin.New()
+
+	// Add recovery middleware
+	r.Use(gin.Recovery())
+
+	// Add metrics middleware globally EXCEPT for /metrics endpoint
+	r.Use(metrics.MetricsMiddleware())
+
+	// Setup metrics endpoint
+	r.GET("/metrics", gin.WrapH(promhttp.HandlerFor(
+		prometheus.DefaultGatherer,
+		promhttp.HandlerOpts{EnableOpenMetrics: true},
+	)))
+
+	// Health check endpoint
 	r.GET("/health", healthCheck)
+
+	// Setup API routes
+	api := r.Group("/api/v1")
+	routes.UserRoutes(api)
 
 	println("✅ Server started at http://localhost:8080")
 	r.Run("0.0.0.0:8080")
