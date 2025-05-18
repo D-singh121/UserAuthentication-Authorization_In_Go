@@ -67,7 +67,15 @@ services:
     networks:
       - auth-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9090/-/healthy",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -97,8 +105,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+  
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:v0.10.1
+    image: prometheuscommunity/postgres-exporter:v0.17.1
     container_name: postgres-exporter
     environment:
       DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@auth-db:5432/${DB_NAME}?sslmode=disable"
@@ -109,7 +118,35 @@ services:
     networks:
       - auth-network
     restart: unless-stopped
-    
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9187/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  node_exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9100/metrics",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - auth-network
+
 volumes:
   postgres_data:
     name: auth-postgres-data
